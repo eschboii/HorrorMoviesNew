@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horror Movie Database</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #222;
+            color: white;
+            text-align: center;
+        }
+        h1, h2 {
+            color: #f00;
+        }
+        table {
+            width: 80%;
+            margin: auto;
+            border-collapse: collapse;
+            background-color: #333;
+        }
+        th, td {
+            border: 1px solid #555;
+            padding: 10px;
+        }
+        th {
+            background-color: #444;
+        }
+        button {
+            background-color: #f00;
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #c00;
+        }
+        input {
+            padding: 5px;
+        }
+        img {
+            margin-top: 10px;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+        }
+    </style>
+    <script>
+        async function fetchMovies(search = '') {
+            const response = await fetch(`http://localhost:8080/movies?search=${search}`);
+            const movies = await response.json();
+            const tableBody = document.getElementById('movies-table-body');
+            tableBody.innerHTML = '';
+            movies.forEach(movie => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><a href="#" onclick="showReviews(${movie.id}, '${movie.title}')">${movie.title}</a></td>
+                    <td>${movie.release_year}</td>
+                    <td>${movie.director}</td>
+                    <td><button onclick="fetchPoster('${movie.poster}')">Poster</button></td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function showReviews(movieId, title) {
+            document.getElementById('movie-section').style.display = 'none';
+            document.getElementById('review-section').style.display = 'block';
+            document.getElementById('review-movie-title').innerText = title;
+            document.getElementById('review-movie-id').value = movieId;
+            fetchReviews(movieId);
+        }
+
+        async function submitReview() {
+            const movieId = document.getElementById('review-movie-id').value;
+            const review = document.getElementById('review-text').value;
+            await fetch('http://localhost:8080/movies/review', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `movieId=${movieId}&review=${review}`
+            });
+            alert('Review submitted');
+            fetchReviews(movieId);
+        }
+
+        async function fetchReviews(movieId) {
+            const response = await fetch(`http://localhost:8080/movies/reviews?movieId=${movieId}`);
+            const reviews = await response.json();
+            setInnerHTML(document.getElementById('reviews-list'), reviews.map(review => `<li>${review}</li>`).join(''))
+        }
+
+        async function fetchPoster(filename) {
+            document.getElementById('poster-display').src = `http://localhost:8080/movies/poster?filename=${filename}`;
+        }
+
+        function goBack() {
+            document.getElementById('movie-section').style.display = 'block';
+            document.getElementById('review-section').style.display = 'none';
+        }
+
+        function setInnerHTML(elm, html) {
+            elm.innerHTML = html;
+            const scripts = elm.querySelectorAll("script");
+            scripts.forEach(oldScript => {
+                const newScript = document.createElement("script");
+                [...oldScript.attributes].forEach(attr => newScript.setAttribute(attr.name, attr.value));
+                newScript.textContent = oldScript.innerHTML;
+                oldScript.parentNode.replaceChild(newScript, oldScript);
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", () => fetchMovies());
+    </script>
+</head>
+<body onload="fetchMovies();">
+    <div class="container">
+        <div id="movie-section">
+            <h1>Horror Movie Database!</h1>
+            
+            <h2>Search Movies</h2>
+            <input type="text" id="search" placeholder="Search for a movie...">
+            <button onclick="fetchMovies(document.getElementById('search').value)">Search</button>
+            
+            <h2>Movie List</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Year</th>
+                        <th>Director</th>
+                        <th>Poster</th>
+                    </tr>
+                </thead>
+                <tbody id="movies-table-body"></tbody>
+            </table>
+        </div>
+        
+        <div id="review-section" style="display: none;">
+            <h1 id="review-movie-title"></h1>
+            <button onclick="goBack()">Back</button>
+            
+            <h2>Add a Review</h2>
+            <input type="hidden" id="review-movie-id">
+            <input type="text" id="review-text" placeholder="Your review" required>
+            <button onclick="submitReview()">Submit Review</button>
+            
+            <h2>Reviews</h2>
+            <ul id="reviews-list"></ul>
+        </div>
+        
+        <h2>Movie Poster</h2>
+        <img id="poster-display" src="" alt="Movie Poster" width="200">
+    </div>
+</body>
+</html>
