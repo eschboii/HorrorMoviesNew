@@ -24,6 +24,8 @@ dependencies {
 	runtimeOnly 'com.h2database:h2'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	implementation 'org.apache.commons:commons-collections4:4.1' // Deserialization Vulnerabilities (CVE-2015-7450)
+	implementation 'org.apache.commons:commons-collections4:4.1' // Deserialization Vulnerabilities CVE-2015-7450 and CVE-2017-9805
 }
 
 tasks.named('test') {
